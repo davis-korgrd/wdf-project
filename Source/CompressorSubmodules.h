@@ -29,6 +29,9 @@ namespace wdfSubmodule
         std::string m_sTreeName = "";
     };
     
+    ///////////////////////////////////////////////////
+    //                 HIGH PASS                     //
+    ///////////////////////////////////////////////////
     class wdfOnePoleHighPass : public wdfSubmoduleBase
     {
     public:
@@ -78,6 +81,9 @@ namespace wdfSubmodule
         std::unique_ptr<wdfTerminatedSeries> m_pSeriesAdapter;
     };
     
+    ///////////////////////////////////////////////////
+    //                GAIN PROCESSOR                 //
+    ///////////////////////////////////////////////////
     class wdfGainProcessor : public wdfSubmoduleBase
     {
     public:
@@ -107,7 +113,7 @@ namespace wdfSubmodule
         //---------------------------------- CLASSES ----------------------------------------
         //-----------------------------------------------------------------------------------
         
-        // Model filter input as an ideal voltage source (as such, it must be the root of the tree)
+        // Model filter input as a resistive voltage source
         std::unique_ptr<wdfTerminatedResVSource> m_pInputSource;
         
         // WDF model of a capacitor
@@ -119,32 +125,51 @@ namespace wdfSubmodule
         // Light-sensitive resistor
         std::unique_ptr<wdfUnterminatedRes> m_pLdr;
         
-        // WDF series adapter. Necessary for connecting the resistive source to the capacitor
+        // WDF series adapter. Necessary for connecting components
         std::unique_ptr<wdfTerminatedParallel> m_pParallelAdapters[kParallelAdapterNumAdapters];
     };
     
+    ///////////////////////////////////////////////////
+    //               ENVELOPE FOLLOWER               //
+    ///////////////////////////////////////////////////
     class wdfEnvelopeFollower : public wdfSubmoduleBase
     {
     public:
         wdfEnvelopeFollower();
         ~wdfEnvelopeFollower();
+        
+        void        processSample(float sampleIn, float & sampleOut);
+        void        reset();
 
     private:
         //-----------------------------------------------------------------------------------
-        //---------------------------------- CLASSES ----------------------------------------
+        //------------------------------------ POD ------------------------------------------
         //-----------------------------------------------------------------------------------
         
-        // Model filter input as an ideal voltage source (as such, it must be the root of the tree)
+        enum
+        {
+            kSeriesAdapterTreeLevel1,
+            kSeriesAdapterTreeLevel2,
+            kSeriesAdapterNumAdapters
+        };
+        
+        //-----------------------------------------------------------------------------------
+        //---------------------------------- CLASSES ----------------------------------------
+        //-----------------------------------------------------------------------------------
+        wdfOnePoleHighPass * m_Hpf;
+        
+        // Model filter input as a resistive voltage source
         std::unique_ptr<wdfTerminatedResVSource> m_pInputSource;
         
         // WDF model of a capacitor
         std::unique_ptr<wdfTerminatedCap> m_pCap;
         
         // WDF model of a resistor
-        std::unique_ptr<wdfTerminatedRes> m_pRes;
+        std::unique_ptr<wdfTerminatedRes> m_pR1;
+        std::unique_ptr<wdfTerminatedRes> m_pR2;
         
-        // WDF series adapter. Necessary for connecting the resistive source to the capacitor
-        std::unique_ptr<wdfTerminatedSeries> m_SeriesAdapter;
-//        std::string m_sTreeName = "Envelope Follower";
+        // WDF adapters. Necessary for connecting components
+        std::unique_ptr<wdfTerminatedSeries> m_pSeriesAdapters[kSeriesAdapterNumAdapters];
+        std::unique_ptr<wdfTerminatedParallel> m_pParallelAdapter;
     };
 }

@@ -117,7 +117,7 @@ wdfOnePoleHighPass::wdfOnePoleHighPass()
 {
     m_pInputSource.reset(new wdfIdealVSource(1.));
     m_pCap.reset(new wdfTerminatedCap(1.,1.));
-    m_pRes.reset(new wdfTerminatedRes(2e3));
+    m_pRes.reset(new wdfTerminatedRes(1e3));
     m_pSeriesAdapter.reset(new wdfTerminatedSeries(m_pRes.get(),m_pCap.get()));
     
     m_pCap.get()->prevA = 0.0000;
@@ -221,8 +221,8 @@ wdfGainProcessor::wdfGainProcessor()
 {
     m_pInputSource.reset(new wdfTerminatedResVSource(0.,1.));
     m_pCap.reset(new wdfTerminatedCap(1.,1.));
-    m_pRes.reset(new wdfTerminatedRes(2e3));
-    m_pLdr.reset(new wdfUnterminatedRes(2e3));
+    m_pRes.reset(new wdfTerminatedRes(1e3));
+    m_pLdr.reset(new wdfUnterminatedRes(1e3));
     
     // initialize adapter moving from bottom (widest part) of tree to top (narrowest part)
     m_pParallelAdapters[kParallelAdapterTreeLevel2].reset(new wdfTerminatedParallel(m_pInputSource.get(), m_pRes.get()));
@@ -259,3 +259,52 @@ void wdfGainProcessor::reset()
 //-----------------------------------------------------------------------------------
 //----------------------------- ENVELOPE FOLLOWER -----------------------------------
 //-----------------------------------------------------------------------------------
+//
+// WDF TREE:
+// [] = component
+// () = adapter
+//
+//                                               [LED]
+//                                                 |
+//                                             (series)
+//                                             |      |
+//                                      (series)     [resistor 2]
+//                                      |      |
+//                              (parallel)    [cap]
+//                              |        |
+// [Resistive voltage source (input)]   [resistor 1]
+//
+wdfEnvelopeFollower::wdfEnvelopeFollower()
+{
+    m_pInputSource.reset(new wdfTerminatedResVSource(0.,1.));
+    m_pCap.reset(new wdfTerminatedCap(1.,1.));
+    m_pR1.reset(new wdfTerminatedRes(1e3));
+    m_pR2.reset(new wdfTerminatedRes(1e3));
+    
+    // initialize adapter moving from bottom (widest part) of tree to top (narrowest part)
+    m_pParallelAdapter.reset(new wdfTerminatedParallel(m_pInputSource.get(), m_pR1.get()));
+    m_pSeriesAdapters[kSeriesAdapterTreeLevel2].reset(new wdfTerminatedSeries(m_pParallelAdapter.get(), m_pCap.get()));
+    m_pSeriesAdapters[kSeriesAdapterTreeLevel1].reset(new wdfTerminatedSeries(m_pSeriesAdapters[kSeriesAdapterTreeLevel2].get(),
+                                                                              m_pR2.get()));
+    
+    m_pCap.get()->prevA = 0.0000;
+    
+    subtreeCount = 3;
+    subtreeEntryNodes = new wdfTreeNode*[subtreeCount];
+    subtreeEntryNodes[0] = m_pSeriesAdapters[kSeriesAdapterTreeLevel1].get();
+    subtreeEntryNodes[1] = m_pSeriesAdapters[kSeriesAdapterTreeLevel2].get();
+    subtreeEntryNodes[2] = m_pParallelAdapter.get();
+    
+    root.reset(new wdfRootNL(subtreeCount, {DIODE}, 1));
+    Rp = new double[subtreeCount] ();
+    
+    m_sTreeName = "Gain Processor";
+}
+
+wdfEnvelopeFollower::~wdfEnvelopeFollower(){}
+
+void wdfEnvelopeFollower::reset()
+{
+    m_pCap.get()->prevA = 0;
+    initTree();
+}
