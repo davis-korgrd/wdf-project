@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2017
+
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JuceTemplate - VST", "JuceTemplate_VST.vcxproj", "{B8F101F5-F6C1-2D12-3C04-39EFAFE45C66}"
+	ProjectSection(ProjectDependencies) = postProject
+		{07ADA619-6577-1D31-F580-D1AFBB1D0587} = {07ADA619-6577-1D31-F580-D1AFBB1D0587}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JuceTemplate - Shared Code", "JuceTemplate_SharedCode.vcxproj", "{07ADA619-6577-1D31-F580-D1AFBB1D0587}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B8F101F5-F6C1-2D12-3C04-39EFAFE45C66}.Debug|x64.Build.0 = Debug|x64
+		{B8F101F5-F6C1-2D12-3C04-39EFAFE45C66}.Debug|x64.ActiveCfg = Debug|x64
+		{B8F101F5-F6C1-2D12-3C04-39EFAFE45C66}.Release|x64.Build.0 = Release|x64
+		{B8F101F5-F6C1-2D12-3C04-39EFAFE45C66}.Release|x64.ActiveCfg = Release|x64
+		{07ADA619-6577-1D31-F580-D1AFBB1D0587}.Debug|x64.Build.0 = Debug|x64
+		{07ADA619-6577-1D31-F580-D1AFBB1D0587}.Debug|x64.ActiveCfg = Debug|x64
+		{07ADA619-6577-1D31-F580-D1AFBB1D0587}.Release|x64.Build.0 = Release|x64
+		{07ADA619-6577-1D31-F580-D1AFBB1D0587}.Release|x64.ActiveCfg = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
