@@ -1,2 +1,4 @@
 JuceLibraryCode
 JuceTemplate.jucer
+Builds/MacOSX/build/Debug/JuceTemplate.vst
+Builds/MacOSX/build/Debug/libJuceTemplate.a

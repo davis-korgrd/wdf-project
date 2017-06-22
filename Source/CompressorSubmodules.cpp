@@ -10,12 +10,12 @@
 
 #include "CompressorSubmodules.h"
 
-using namespace wdfOnePoleHPF;
+using namespace wdfSubmodule;
 
 //-----------------------------------------------------------------------------------
 //---------------------------- Helper Virtual Class ---------------------------------
 //-----------------------------------------------------------------------------------
-int wdfSubmodule::setRootMatrData(matData* rootMats, double* Rp)
+int wdfSubmoduleBase::setRootMatrData(matData* rootMats, double* Rp)
 {
     if (rootMats->Emat.is_empty())
     {
@@ -88,30 +88,48 @@ int wdfSubmodule::setRootMatrData(matData* rootMats, double* Rp)
     return 0;
 }
 
-void wdfSubmodule::setInputValue(double signalIn) {}
+void wdfSubmoduleBase::setInputValue(double signalIn) {}
 
-double wdfSubmodule::getOutputValue() {return 0;}
+double wdfSubmoduleBase::getOutputValue() {return 0;}
 
-void wdfSubmodule::setParam(size_t paramID, double paramValue) {}
+void wdfSubmoduleBase::setParam(size_t paramID, double paramValue) {}
+
+const char* wdfSubmoduleBase::getTreeIdentifier()
+{
+    return m_sTreeName.c_str();
+}
 
 //-----------------------------------------------------------------------------------
 //------------------------- One Pole High Pass Filter -------------------------------
 //-----------------------------------------------------------------------------------
+//
+// WDF TREE:
+// [] = component
+// () = adapter
+//
+//          [ideal voltage source (input)]
+//                       |
+//                    (series)
+//                    |      |
+//             [resistor]   [cap]
+//
 wdfOnePoleHighPass::wdfOnePoleHighPass()
 {
-    m_InputSource.reset(new wdfIdealVSource(1.));
-    m_Cap.reset(new wdfTerminatedCap(1.,1.));
-    m_Res.reset(new wdfTerminatedRes(2e3));
-    m_SeriesAdapter.reset(new wdfTerminatedSeries(m_Res.get(),m_Cap.get()));
+    m_pInputSource.reset(new wdfIdealVSource(1.));
+    m_pCap.reset(new wdfTerminatedCap(1.,1.));
+    m_pRes.reset(new wdfTerminatedRes(2e3));
+    m_pSeriesAdapter.reset(new wdfTerminatedSeries(m_pRes.get(),m_pCap.get()));
     
-    m_Cap.get()->prevA = 0.0000;
+    m_pCap.get()->prevA = 0.0000;
     
     subtreeCount = 1;
     subtreeEntryNodes = new wdfTreeNode*[subtreeCount];
-    subtreeEntryNodes[0] = m_SeriesAdapter.get();
+    subtreeEntryNodes[0] = m_pSeriesAdapter.get();
     
-    root.reset( new wdfRootSimple(m_InputSource.get()) );
+    root.reset( new wdfRootSimple(m_pInputSource.get()) );
     Rp = new double[subtreeCount] ();
+    
+    m_sTreeName = "High Pass";
 }
 
 wdfOnePoleHighPass::~wdfOnePoleHighPass()
@@ -119,20 +137,15 @@ wdfOnePoleHighPass::~wdfOnePoleHighPass()
 
 void wdfOnePoleHighPass::processSample(float sampleIn, float & sampleOut)
 {
-    m_InputSource->Vs = sampleIn;
+    m_pInputSource->Vs = sampleIn;
     cycleWave();
-    sampleOut = (float)m_Res->upPort->getPortVoltage();
+    sampleOut = (float)m_pRes->upPort->getPortVoltage();
 }
 
 void wdfOnePoleHighPass::reset()
 {
-    m_Cap.get()->prevA = 0;
+    m_pCap.get()->prevA = 0;
     initTree();
-}
-
-const char* wdfOnePoleHighPass::getTreeIdentifier()
-{
-    return m_sTreeName.c_str();
 }
 
 // Setters and Getters
@@ -145,7 +158,7 @@ void wdfOnePoleHighPass::setResComponentVal(float resVal, bool isNormalized)
     else
     {
         m_fResComponentVal = resVal;
-        m_Res->R = resVal;
+        m_pRes->R = resVal;
     }
 }
 
@@ -158,7 +171,7 @@ void wdfOnePoleHighPass::setCapComponentVal(float capVal, bool isNormalized)
     else
     {
         m_fCapComponentVal = capVal;
-        m_Cap->C = capVal;
+        m_pCap->C = capVal;
     }
 }
 
@@ -187,3 +200,62 @@ float wdfOnePoleHighPass::getCapComponentVal(bool isNormalized)
     }
     return 0;
 }
+
+//-----------------------------------------------------------------------------------
+//------------------------------- GAIN PROCESSOR ------------------------------------
+//-----------------------------------------------------------------------------------
+//
+// WDF TREE:
+// [] = component
+// () = adapter
+//
+//                            [LDR]
+//                              |
+//                          (parallel)
+//                          |       |
+//                      (parallel) [cap]
+//                      |       |
+//[resistive source (input)]   [resistor]
+//
+wdfGainProcessor::wdfGainProcessor()
+{
+    m_pInputSource.reset(new wdfTerminatedResVSource(0.,1.));
+    m_pCap.reset(new wdfTerminatedCap(1.,1.));
+    m_pRes.reset(new wdfTerminatedRes(2e3));
+    m_pLdr.reset(new wdfUnterminatedRes(2e3));
+    
+    // initialize adapter moving from bottom (widest part) of tree to top (narrowest part)
+    m_pParallelAdapters[kParallelAdapterTreeLevel2].reset(new wdfTerminatedParallel(m_pInputSource.get(), m_pRes.get()));
+    m_pParallelAdapters[kParallelAdapterTreeLevel1].reset(new wdfTerminatedParallel(m_pParallelAdapters[kParallelAdapterTreeLevel2].get(),
+                                                                                    m_pCap.get()));
+    
+    m_pCap.get()->prevA = 0.0000;
+    
+    subtreeCount = 2;
+    subtreeEntryNodes = new wdfTreeNode*[subtreeCount];
+    subtreeEntryNodes[0] = m_pParallelAdapters[kParallelAdapterTreeLevel1].get();
+    subtreeEntryNodes[1] = m_pParallelAdapters[kParallelAdapterTreeLevel2].get();
+    
+    root.reset(new wdfRootSimple(m_pLdr.get()));
+    Rp = new double[subtreeCount] ();
+    
+    m_sTreeName = "Gain Processor";
+}
+
+wdfGainProcessor::~wdfGainProcessor() {}
+
+void wdfGainProcessor::processSample(float sampleIn, float & sampleOut)
+{
+    m_pInputSource->Vs = sampleIn;
+    cycleWave();
+    sampleOut = (float)m_pRes->upPort->getPortVoltage();
+}
+
+void wdfGainProcessor::reset()
+{
+    m_pCap.get()->prevA = 0;
+    initTree();
+}
+//-----------------------------------------------------------------------------------
+//----------------------------- ENVELOPE FOLLOWER -----------------------------------
+//-----------------------------------------------------------------------------------

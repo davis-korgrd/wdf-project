@@ -59,7 +59,8 @@ public:
     
     void setParameter(float parameterValue, int parameterIndex);
     
-    wdfOnePoleHPF::wdfOnePoleHighPass * m_Hpf;
+    wdfSubmodule::wdfOnePoleHighPass * m_pHpf;
+    wdfSubmodule::wdfGainProcessor * m_pGainProcessor;
     
 private:
     //==============================================================================

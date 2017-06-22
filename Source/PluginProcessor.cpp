@@ -25,14 +25,14 @@ JuceTemplateAudioProcessor::JuceTemplateAudioProcessor()
                        )
 #endif
 {
-    m_Hpf = new wdfOnePoleHPF::wdfOnePoleHighPass();
-    m_Hpf->setResComponentVal(220e3);
-    m_Hpf->setCapComponentVal(14.7e-9);
+    m_pHpf = new wdfSubmodule::wdfOnePoleHighPass();
+    m_pHpf->setResComponentVal(220e3);
+    m_pHpf->setCapComponentVal(14.7e-9);
 }
 
 JuceTemplateAudioProcessor::~JuceTemplateAudioProcessor()
 {
-    delete m_Hpf;
+    delete m_pHpf;
 }
 
 //==============================================================================
@@ -96,8 +96,11 @@ void JuceTemplateAudioProcessor::prepareToPlay (double sampleRate, int samplesPe
     //const int totalNumInputChannels  = getTotalNumInputChannels();
     //const int totalNumOutputChannels = getTotalNumOutputChannels();
     
-    m_Hpf->setSamplerate(sampleRate);
-    m_Hpf->reset();
+    m_pHpf->setSamplerate(sampleRate);
+    m_pHpf->reset();
+    
+    m_pGainProcessor->setSamplerate(sampleRate);
+    m_pGainProcessor->reset();
 }
 
 void JuceTemplateAudioProcessor::releaseResources()
@@ -155,12 +158,14 @@ void JuceTemplateAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBu
         float* channelData = buffer.getWritePointer (j);
         float* channelDataR = buffer.getWritePointer (j + 1);
         
-        m_Hpf->adaptTree();
+        m_pHpf->adaptTree();
+        m_pGainProcessor->adaptTree();
         // ..do something to the data...
         for (int i = 0; i < buffer.getNumSamples(); ++i)
         {
             float out = 0;
-            m_Hpf->processSample(channelData[i], out);
+            m_pHpf->processSample(channelData[i], out);
+            m_pGainProcessor->processSample(out, out);
             channelDataR[i] = out;
             channelData[i] = out;
         }
@@ -205,7 +210,7 @@ void JuceTemplateAudioProcessor::setParameter(float parameterValue, int paramete
     {
         case 0:
         {
-            m_Hpf->setResComponentVal(parameterValue);
+//            m_pHpf->setResComponentVal(parameterValue);
             break;
         }
             
