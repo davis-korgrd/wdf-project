@@ -28,6 +28,16 @@ JuceTemplateAudioProcessor::JuceTemplateAudioProcessor()
     m_pHpf = new wdfSubmodule::wdfOnePoleHighPass();
     m_pHpf->setResComponentVal(220e3);
     m_pHpf->setCapComponentVal(14.7e-9);
+    
+    m_pGainProcessor = new wdfSubmodule::wdfGainProcessor;
+    m_pGainProcessor->setResComponentVal(2.2e6);
+    m_pGainProcessor->setCapComponentVal(22e-12);
+    m_pGainProcessor->setLdrComponentVal(1);
+    
+    m_pEnvFollower = new wdfSubmodule::wdfEnvelopeFollower();
+    m_pEnvFollower->setR1ComponentVal(110e3);
+    m_pEnvFollower->setR2ComponentVal(1e3);
+    m_pEnvFollower->setCapComponentVal(1e-6);
 }
 
 JuceTemplateAudioProcessor::~JuceTemplateAudioProcessor()
@@ -101,6 +111,11 @@ void JuceTemplateAudioProcessor::prepareToPlay (double sampleRate, int samplesPe
     
     m_pGainProcessor->setSamplerate(sampleRate);
     m_pGainProcessor->reset();
+    
+    m_pEnvFollower->setSamplerate(sampleRate);
+    m_pEnvFollower->reset();
+    
+    m_fFeedback = 1;
 }
 
 void JuceTemplateAudioProcessor::releaseResources()
@@ -147,25 +162,23 @@ void JuceTemplateAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBu
     for (int i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-//    double R = this->R;
-//    double C = this->C;
-//    float fs = getSampleRate();
-    
     for (int j = 0; j < 1; ++j)
     {
         float* channelData = buffer.getWritePointer (j);
         float* channelDataR = buffer.getWritePointer (j + 1);
         
+        m_pGainProcessor->setLdrComponentVal(m_fFeedback);
+        
         m_pHpf->adaptTree();
         m_pGainProcessor->adaptTree();
-        // ..do something to the data...
+        m_pEnvFollower->adaptTree();
+
         for (int i = 0; i < buffer.getNumSamples(); ++i)
         {
             float out = 0;
             m_pHpf->processSample(channelData[i], out);
-            m_pGainProcessor->processSample(out, out);
+//            m_pGainProcessor->processSample(out, out);
+//            m_pEnvFollower->processSample(out, m_fFeedback);
             channelDataR[i] = out;
             channelData[i] = out;
         }

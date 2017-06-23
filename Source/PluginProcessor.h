@@ -61,6 +61,9 @@ public:
     
     wdfSubmodule::wdfOnePoleHighPass * m_pHpf;
     wdfSubmodule::wdfGainProcessor * m_pGainProcessor;
+    wdfSubmodule::wdfEnvelopeFollower * m_pEnvFollower;
+    
+    float m_fFeedback;
     
 private:
     //==============================================================================

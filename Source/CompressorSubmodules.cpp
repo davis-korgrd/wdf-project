@@ -5,6 +5,9 @@
     Created: 21 Jun 2017 4:22:41pm
     Author:  Davis
 
+    Eichas & Zölzer paper used for LDR reference:
+    Modeling of an Optocoupler-Based Audio Dynamic Range Control Circuit
+    http://proceedings.spiedigitallibrary.org/proceeding.aspx?articleid=2565611
   ==============================================================================
 */
 
@@ -312,8 +315,23 @@ float wdfGainProcessor::getCapComponentVal(bool isNormalized)
 
 void wdfGainProcessor::setLdrComponentVal(float ldrVal)
 {
-    //need to add cooking
-    m_fLdrComponentVal = ldrVal;
+    // input is current off of diode from envelope follower, LDR curve is roughly logarithmic, so:
+    // normalize --> take log --> multiply against resistor range
+    
+    // assume max current is about 50mA (datasheet gives 40 as upper range, empirical test gives 50 as an approximate value
+    const float maxCurrent = 50e-3;
+    
+    // resistance values come from datasheet and Eichas & Zölzer paper
+    const float maxResistance = 1e6;
+    const float minResistance = 100;
+    
+    if(ldrVal < 0) ldrVal *= -1;
+    const float normalizedCurrent = ldrVal / maxCurrent;
+    
+    // LDR curve looks roughly logarithmic. For easy of use, log function shifted to intercept (0,1) and (1,0)
+    const float logVal = log(normalizedCurrent);
+    
+    m_fLdrComponentVal = logVal * (maxResistance - minResistance) + minResistance;
 }
 
 float wdfGainProcessor::getLdrComponentVal()
@@ -371,7 +389,7 @@ void wdfEnvelopeFollower::processSample(float sampleIn, float &sampleOut)
 {
     m_pInputSource->Vs = sampleIn;
     cycleWave();
-    sampleOut = (float)m_pSeriesAdapters[kSeriesAdapterTreeLevel1]->upPort->getPortVoltage();
+    sampleOut = (float)m_pSeriesAdapters[kSeriesAdapterTreeLevel1]->upPort->getPortCurrent();
 }
 
 void wdfEnvelopeFollower::reset()
@@ -389,8 +407,8 @@ void wdfEnvelopeFollower::setR1ComponentVal(float r1Val, bool isNormalized)
     }
     else
     {
-        m_fR1ComponentVal = resVal;
-        m_pR1->R = resVal;
+        m_fR1ComponentVal = r1Val;
+        m_pR1->R = r1Val;
     }
 }
 
