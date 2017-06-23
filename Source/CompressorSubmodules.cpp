@@ -248,7 +248,7 @@ void wdfGainProcessor::processSample(float sampleIn, float & sampleOut)
     // expecting current input, need to apply Thevenin equivalence to convert to voltage
     m_pInputSource->Vs = sampleIn * m_fResComponentVal;
     cycleWave();
-    sampleOut = (float)m_pCap->upPort->getPortVoltage();
+    sampleOut = (float)m_pInputSource->upPort->getPortCurrent() * 100e3; // take current through resistor and multiply by output resistor
 }
 
 void wdfGainProcessor::reset()
@@ -315,16 +315,15 @@ void wdfGainProcessor::setLdrComponentVal(float ldrVal)
     // input is current off of diode from envelope follower, LDR curve is roughly logarithmic, so:
     // normalize --> take log --> multiply against resistor range
     
-    // assume max current is about 50mA (datasheet gives 40 as upper range, empirical test gives 50 as an approximate value
-    const float maxCurrent = 50e-3;
-    
     // resistance values come from datasheet and Eichas & Zölzer paper
-    const float maxResistance = 1e3;
+    const float maxResistance = 1e6;
     const float minResistance = 100;
     
+    if(ldrVal > 1.f) ldrVal = 1.f;
+    else if (ldrVal < 0.f) ldrVal = ldrVal * -1;
     
     // LDR curve looks roughly logarithmic. For easy of use, log function shifted to intercept (0,1) and (1,0)
-    float logVal = -log10(ldrVal * 10e6 + 0.1) * 0.9;
+    float logVal = -log10(ldrVal * 1e3  + 0.1);
     
     // Clip
     if(logVal > 1.f) logVal = 1.f;
@@ -395,11 +394,7 @@ void wdfEnvelopeFollower::processSample(float sampleIn, float &sampleOut)
     // need to get Thevenin equivalent
     m_pInputSource->Vs = sampleIn * m_fR1ComponentVal;
     cycleWave();
-    sampleOut = (float)m_pSeriesAdapters[kSeriesAdapterTreeLevel1]->upPort->getPortCurrent();
-    if(sampleOut != sampleOut)
-    {
-        printf("NAN");
-    }
+    sampleOut = (float)m_pSeriesAdapters[kSeriesAdapterTreeLevel1]->upPort->getPortVoltage();
 }
 
 void wdfEnvelopeFollower::reset()
