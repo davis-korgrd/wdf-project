@@ -93,6 +93,12 @@ namespace wdfSubmodule
         void        processSample(float sampleIn, float & sampleOut);
         void        reset();
         
+        void        setResComponentVal(float resVal, bool isNormalized = 0);
+        void        setLdrComponentVal(float ldrVal);
+        void        setCapComponentVal(float capVal, bool isNormalized = 0);
+        float       getResComponentVal(bool isNormalized = 0);
+        float       getLdrComponentVal();
+        float       getCapComponentVal(bool isNormalized = 0);
     private:
         //-----------------------------------------------------------------------------------
         //------------------------------------ POD ------------------------------------------
@@ -102,6 +108,7 @@ namespace wdfSubmodule
         // not values normalized to 0 - 1.
         float m_fResComponentVal;
         float m_fCapComponentVal;
+        float m_fLdrComponentVal;
         enum
         {
             kParallelAdapterTreeLevel1,
@@ -141,9 +148,23 @@ namespace wdfSubmodule
         void        processSample(float sampleIn, float & sampleOut);
         void        reset();
 
+        void        setR1ComponentVal(float r1Val, bool isNormalized = 0);
+        void        setR2ComponentVal(float r2Val, bool isNormalized = 0);
+        void        setCapComponentVal(float capVal, bool isNormalized = 0);
+        float       getR1ComponentVal(bool isNormalized = 0);
+        float       getR2ComponentVal(bool isNormalized = 0);
+        float       getCapComponentVal(bool isNormalized = 0);
     private:
         //-----------------------------------------------------------------------------------
         //------------------------------------ POD ------------------------------------------
+        //-----------------------------------------------------------------------------------
+        
+        float m_fCapComponentVal;
+        float m_fR1ComponentVal;
+        float m_fR2ComponentVal;
+        
+        //-----------------------------------------------------------------------------------
+        //--------------------------------- CONSTANTS ---------------------------------------
         //-----------------------------------------------------------------------------------
         
         enum
@@ -152,6 +173,8 @@ namespace wdfSubmodule
             kSeriesAdapterTreeLevel2,
             kSeriesAdapterNumAdapters
         };
+        const float m_fHpfCapval = 100e-9;
+        const float m_fHpfResVal = 10e3;
         
         //-----------------------------------------------------------------------------------
         //---------------------------------- CLASSES ----------------------------------------

@@ -256,6 +256,70 @@ void wdfGainProcessor::reset()
     m_pCap.get()->prevA = 0;
     initTree();
 }
+
+// Setters and Getters
+void wdfGainProcessor::setResComponentVal(float resVal, bool isNormalized)
+{
+    if(isNormalized)
+    {
+        
+    }
+    else
+    {
+        m_fResComponentVal = resVal;
+        m_pRes->R = resVal;
+    }
+}
+
+void wdfGainProcessor::setCapComponentVal(float capVal, bool isNormalized)
+{
+    if(isNormalized)
+    {
+        
+    }
+    else
+    {
+        m_fCapComponentVal = capVal;
+        m_pCap->C = capVal;
+    }
+}
+
+float wdfGainProcessor::getResComponentVal(bool isNormalized)
+{
+    if(isNormalized)
+    {
+        
+    }
+    else
+    {
+        return m_fResComponentVal;
+    }
+    return 0;
+}
+
+float wdfGainProcessor::getCapComponentVal(bool isNormalized)
+{
+    if(isNormalized)
+    {
+        
+    }
+    else
+    {
+        return m_fCapComponentVal;
+    }
+    return 0;
+}
+
+void wdfGainProcessor::setLdrComponentVal(float ldrVal)
+{
+    //need to add cooking
+    m_fLdrComponentVal = ldrVal;
+}
+
+float wdfGainProcessor::getLdrComponentVal()
+{
+    return m_fLdrComponentVal;
+}
 //-----------------------------------------------------------------------------------
 //----------------------------- ENVELOPE FOLLOWER -----------------------------------
 //-----------------------------------------------------------------------------------
@@ -297,14 +361,100 @@ wdfEnvelopeFollower::wdfEnvelopeFollower()
     
     root.reset(new wdfRootNL(subtreeCount, {DIODE}, 1));
     Rp = new double[subtreeCount] ();
-    
     m_sTreeName = "Gain Processor";
 }
 
 wdfEnvelopeFollower::~wdfEnvelopeFollower(){}
 
+// RETURNS A CONTROL VOLTAGE, NOT AUDIO 
+void wdfEnvelopeFollower::processSample(float sampleIn, float &sampleOut)
+{
+    m_pInputSource->Vs = sampleIn;
+    cycleWave();
+    sampleOut = (float)m_pSeriesAdapters[kSeriesAdapterTreeLevel1]->upPort->getPortVoltage();
+}
+
 void wdfEnvelopeFollower::reset()
 {
     m_pCap.get()->prevA = 0;
     initTree();
+}
+
+// Setters and Getters
+void wdfEnvelopeFollower::setR1ComponentVal(float r1Val, bool isNormalized)
+{
+    if(isNormalized)
+    {
+        
+    }
+    else
+    {
+        m_fR1ComponentVal = resVal;
+        m_pR1->R = resVal;
+    }
+}
+
+void wdfEnvelopeFollower::setR2ComponentVal(float r2Val, bool isNormalized)
+{
+    if(isNormalized)
+    {
+        
+    }
+    else
+    {
+        m_fR2ComponentVal = r2Val;
+        m_pR2->R = r2Val;
+    }
+}
+
+void wdfEnvelopeFollower::setCapComponentVal(float capVal, bool isNormalized)
+{
+    if(isNormalized)
+    {
+        
+    }
+    else
+    {
+        m_fCapComponentVal = capVal;
+        m_pCap->C = capVal;
+    }
+}
+
+float wdfEnvelopeFollower::getR1ComponentVal(bool isNormalized)
+{
+    if(isNormalized)
+    {
+        
+    }
+    else
+    {
+        return m_fR1ComponentVal;
+    }
+    return 0;
+}
+
+float wdfEnvelopeFollower::getR2ComponentVal(bool isNormalized)
+{
+    if(isNormalized)
+    {
+        
+    }
+    else
+    {
+        return m_fR2ComponentVal;
+    }
+    return 0;
+}
+
+float wdfEnvelopeFollower::getCapComponentVal(bool isNormalized)
+{
+    if(isNormalized)
+    {
+        
+    }
+    else
+    {
+        return m_fCapComponentVal;
+    }
+    return 0;
 }
