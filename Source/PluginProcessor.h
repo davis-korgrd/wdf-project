@@ -64,6 +64,7 @@ public:
     wdfSubmodule::wdfEnvelopeFollower * m_pEnvFollower;
     
     float m_fFeedback;
+    float m_fLevel;
     
 private:
     //==============================================================================

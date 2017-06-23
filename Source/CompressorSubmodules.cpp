@@ -120,7 +120,7 @@ wdfOnePoleHighPass::wdfOnePoleHighPass()
 {
     m_pInputSource.reset(new wdfIdealVSource(1.));
     m_pCap.reset(new wdfTerminatedCap(1.,1.));
-    m_pRes.reset(new wdfTerminatedRes(1e3));
+    m_pRes.reset(new wdfTerminatedRes(2e3));
     m_pSeriesAdapter.reset(new wdfTerminatedSeries(m_pRes.get(),m_pCap.get()));
     
     m_pCap.get()->prevA = 0.0000;
@@ -142,7 +142,7 @@ void wdfOnePoleHighPass::processSample(float sampleIn, float & sampleOut)
 {
     m_pInputSource->Vs = sampleIn;
     cycleWave();
-    sampleOut = (float)m_pRes->upPort->getPortVoltage();
+    sampleOut = (float)m_pRes->upPort->getPortCurrent();
 }
 
 void wdfOnePoleHighPass::reset()
@@ -224,20 +224,16 @@ wdfGainProcessor::wdfGainProcessor()
 {
     m_pInputSource.reset(new wdfTerminatedResVSource(0.,1.));
     m_pCap.reset(new wdfTerminatedCap(1.,1.));
-    m_pRes.reset(new wdfTerminatedRes(1e3));
-    m_pLdr.reset(new wdfUnterminatedRes(1e3));
+    m_pLdr.reset(new wdfUnterminatedRes(2e3));
     
     // initialize adapter moving from bottom (widest part) of tree to top (narrowest part)
-    m_pParallelAdapters[kParallelAdapterTreeLevel2].reset(new wdfTerminatedParallel(m_pInputSource.get(), m_pRes.get()));
-    m_pParallelAdapters[kParallelAdapterTreeLevel1].reset(new wdfTerminatedParallel(m_pParallelAdapters[kParallelAdapterTreeLevel2].get(),
-                                                                                    m_pCap.get()));
+    m_pParallelAdapter.reset(new wdfTerminatedParallel(m_pInputSource.get(), m_pCap.get()));
     
     m_pCap.get()->prevA = 0.0000;
     
-    subtreeCount = 2;
+    subtreeCount = 1;
     subtreeEntryNodes = new wdfTreeNode*[subtreeCount];
-    subtreeEntryNodes[0] = m_pParallelAdapters[kParallelAdapterTreeLevel1].get();
-    subtreeEntryNodes[1] = m_pParallelAdapters[kParallelAdapterTreeLevel2].get();
+    subtreeEntryNodes[0] = m_pParallelAdapter.get();
     
     root.reset(new wdfRootSimple(m_pLdr.get()));
     Rp = new double[subtreeCount] ();
@@ -249,9 +245,10 @@ wdfGainProcessor::~wdfGainProcessor() {}
 
 void wdfGainProcessor::processSample(float sampleIn, float & sampleOut)
 {
-    m_pInputSource->Vs = sampleIn;
+    // expecting current input, need to apply Thevenin equivalence to convert to voltage
+    m_pInputSource->Vs = sampleIn * m_fResComponentVal;
     cycleWave();
-    sampleOut = (float)m_pRes->upPort->getPortVoltage();
+    sampleOut = (float)m_pCap->upPort->getPortVoltage();
 }
 
 void wdfGainProcessor::reset()
@@ -270,7 +267,7 @@ void wdfGainProcessor::setResComponentVal(float resVal, bool isNormalized)
     else
     {
         m_fResComponentVal = resVal;
-        m_pRes->R = resVal;
+        m_pInputSource->RSer = resVal;
     }
 }
 
@@ -322,14 +319,16 @@ void wdfGainProcessor::setLdrComponentVal(float ldrVal)
     const float maxCurrent = 50e-3;
     
     // resistance values come from datasheet and Eichas & Zölzer paper
-    const float maxResistance = 1e6;
+    const float maxResistance = 1e3;
     const float minResistance = 100;
     
-    if(ldrVal < 0) ldrVal *= -1;
-    const float normalizedCurrent = ldrVal / maxCurrent;
     
     // LDR curve looks roughly logarithmic. For easy of use, log function shifted to intercept (0,1) and (1,0)
-    const float logVal = log(normalizedCurrent);
+    float logVal = -log10(ldrVal * 10e6 + 0.1) * 0.9;
+    
+    // Clip
+    if(logVal > 1.f) logVal = 1.f;
+    else if (logVal < 0.f) logVal = 0.f;
     
     m_fLdrComponentVal = logVal * (maxResistance - minResistance) + minResistance;
 }
@@ -358,10 +357,15 @@ float wdfGainProcessor::getLdrComponentVal()
 //
 wdfEnvelopeFollower::wdfEnvelopeFollower()
 {
+    // input hpf
+    m_pHpf = new wdfOnePoleHighPass();
+    m_pHpf->setResComponentVal(m_fHpfResVal);
+    m_pHpf->setCapComponentVal(m_fHpfCapval);
+    
     m_pInputSource.reset(new wdfTerminatedResVSource(0.,1.));
     m_pCap.reset(new wdfTerminatedCap(1.,1.));
-    m_pR1.reset(new wdfTerminatedRes(1e3));
-    m_pR2.reset(new wdfTerminatedRes(1e3));
+    m_pR1.reset(new wdfTerminatedRes(2e3));
+    m_pR2.reset(new wdfTerminatedRes(2e3));
     
     // initialize adapter moving from bottom (widest part) of tree to top (narrowest part)
     m_pParallelAdapter.reset(new wdfTerminatedParallel(m_pInputSource.get(), m_pR1.get()));
@@ -379,7 +383,7 @@ wdfEnvelopeFollower::wdfEnvelopeFollower()
     
     root.reset(new wdfRootNL(subtreeCount, {DIODE}, 1));
     Rp = new double[subtreeCount] ();
-    m_sTreeName = "Gain Processor";
+    m_sTreeName = "Envelope Follower";
 }
 
 wdfEnvelopeFollower::~wdfEnvelopeFollower(){}
@@ -387,15 +391,29 @@ wdfEnvelopeFollower::~wdfEnvelopeFollower(){}
 // RETURNS A CONTROL VOLTAGE, NOT AUDIO 
 void wdfEnvelopeFollower::processSample(float sampleIn, float &sampleOut)
 {
-    m_pInputSource->Vs = sampleIn;
+    m_pHpf->processSample(sampleIn, sampleIn);
+    // need to get Thevenin equivalent
+    m_pInputSource->Vs = sampleIn * m_fR1ComponentVal;
     cycleWave();
     sampleOut = (float)m_pSeriesAdapters[kSeriesAdapterTreeLevel1]->upPort->getPortCurrent();
+    if(sampleOut != sampleOut)
+    {
+        printf("NAN");
+    }
 }
 
 void wdfEnvelopeFollower::reset()
 {
     m_pCap.get()->prevA = 0;
+    m_pHpf->reset();
+    m_pHpf->adaptTree();
     initTree();
+}
+
+void wdfEnvelopeFollower::setSampleRate(float sampleRate)
+{
+    setSampleRate(sampleRate);
+    m_pHpf->setSamplerate(sampleRate);
 }
 
 // Setters and Getters

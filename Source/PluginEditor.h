@@ -58,12 +58,10 @@ private:
     //[/UserVariables]
 
     //==============================================================================
-    ScopedPointer<Slider> sliderFc;
-    ScopedPointer<Slider> sliderRC;
+    ScopedPointer<Slider> sliderSustain;
+    ScopedPointer<Slider> sliderLevel;
     ScopedPointer<Label> lblR;
     ScopedPointer<Label> lblC;
-    ScopedPointer<TextEditor> txtR;
-    ScopedPointer<TextEditor> txtC;
 
 
     //==============================================================================

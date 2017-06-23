@@ -33,64 +33,64 @@ JuceTemplateAudioProcessorEditor::JuceTemplateAudioProcessorEditor (JuceTemplate
     //[Constructor_pre] You can add your own custom stuff here..
     //[/Constructor_pre]
 
-    addAndMakeVisible (sliderFc = new Slider ("Fc"));
-    sliderFc->setRange (50, 5000, 0);
-    sliderFc->setSliderStyle (Slider::LinearHorizontal);
-    sliderFc->setTextBoxStyle (Slider::TextBoxLeft, false, 80, 20);
-    sliderFc->addListener (this);
+    addAndMakeVisible (sliderSustain = new Slider ("Sustain"));
+    sliderSustain->setRange (0, 1, 0);
+    sliderSustain->setSliderStyle (Slider::LinearHorizontal);
+    sliderSustain->setTextBoxStyle (Slider::TextBoxLeft, false, 80, 20);
+    sliderSustain->addListener (this);
 
-    addAndMakeVisible (sliderRC = new Slider ("Distortion"));
-    sliderRC->setRange (0, 6, 0);
-    sliderRC->setSliderStyle (Slider::LinearHorizontal);
-    sliderRC->setTextBoxStyle (Slider::TextBoxLeft, false, 80, 20);
-    sliderRC->addListener (this);
+    addAndMakeVisible (sliderLevel = new Slider ("Level"));
+    sliderLevel->setRange (0, 1, 0);
+    sliderLevel->setSliderStyle (Slider::LinearHorizontal);
+    sliderLevel->setTextBoxStyle (Slider::TextBoxLeft, false, 80, 20);
+    sliderLevel->addListener (this);
 
-    addAndMakeVisible (lblR = new Label ("R",
-                                         TRANS("R")));
+    addAndMakeVisible (lblR = new Label ("Sustain",
+                                         TRANS("Sustain")));
     lblR->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
     lblR->setJustificationType (Justification::centredLeft);
     lblR->setEditable (false, false, false);
     lblR->setColour (TextEditor::textColourId, Colours::black);
     lblR->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
 
-    addAndMakeVisible (lblC = new Label ("C",
-                                         TRANS("C")));
+    addAndMakeVisible (lblC = new Label ("Level",
+                                         TRANS("Level")));
     lblC->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
     lblC->setJustificationType (Justification::centredLeft);
     lblC->setEditable (false, false, false);
     lblC->setColour (TextEditor::textColourId, Colours::black);
     lblC->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
 
-    addAndMakeVisible (txtR = new TextEditor ("R"));
-    txtR->setMultiLine (false);
-    txtR->setReturnKeyStartsNewLine (false);
-    txtR->setReadOnly (true);
-    txtR->setScrollbarsShown (false);
-    txtR->setCaretVisible (false);
-    txtR->setPopupMenuEnabled (false);
-    txtR->setText (String());
-
-    addAndMakeVisible (txtC = new TextEditor ("C"));
-    txtC->setMultiLine (false);
-    txtC->setReturnKeyStartsNewLine (false);
-    txtC->setReadOnly (true);
-    txtC->setScrollbarsShown (false);
-    txtC->setCaretVisible (false);
-    txtC->setPopupMenuEnabled (false);
-    txtC->setText (String());
+//    addAndMakeVisible (txtR = new TextEditor ("R"));
+//    txtR->setMultiLine (false);
+//    txtR->setReturnKeyStartsNewLine (false);
+//    txtR->setReadOnly (true);
+//    txtR->setScrollbarsShown (false);
+//    txtR->setCaretVisible (false);
+//    txtR->setPopupMenuEnabled (false);
+//    txtR->setText (String());
+//
+//    addAndMakeVisible (txtC = new TextEditor ("C"));
+//    txtC->setMultiLine (false);
+//    txtC->setReturnKeyStartsNewLine (false);
+//    txtC->setReadOnly (true);
+//    txtC->setScrollbarsShown (false);
+//    txtC->setCaretVisible (false);
+//    txtC->setPopupMenuEnabled (false);
+//    txtC->setText (String());
 
 
     //[UserPreSize]
-    sliderFc->setSkewFactorFromMidPoint(500.);
-    sliderRC->setSkewFactorFromMidPoint(3.);
+//    sliderSustain->setSkewFactorFromMidPoint(500.);
+//    sliderLevel->setSkewFactorFromMidPoint(3.);
     //[/UserPreSize]
 
     setSize (250, 140);
 
 
     //[Constructor] You can add your own custom stuff here..
-    sliderFc->setValue(500.);
-    sliderRC->setValue(3.);
+    sliderSustain->setValue(0.5);
+    sliderLevel->setValue(1.);
     //[/Constructor]
 }
 
@@ -99,12 +99,10 @@ JuceTemplateAudioProcessorEditor::~JuceTemplateAudioProcessorEditor()
     //[Destructor_pre]. You can add your own custom destruction code here..
     //[/Destructor_pre]
 
-    sliderFc = nullptr;
-    sliderRC = nullptr;
+    sliderSustain = nullptr;
+    sliderLevel = nullptr;
     lblR = nullptr;
     lblC = nullptr;
-    txtR = nullptr;
-    txtC = nullptr;
 
 
     //[Destructor]. You can add your own custom destruction code here..
@@ -128,12 +126,12 @@ void JuceTemplateAudioProcessorEditor::resized()
     //[UserPreResize] Add your own custom resize code here..
     //[/UserPreResize]
 
-    sliderFc->setBounds (8, 8, 240, 24);
-    sliderRC->setBounds (8, 40, 240, 24);
-    lblR->setBounds (8, 72, 24, 24);
-    lblC->setBounds (8, 104, 24, 24);
-    txtR->setBounds (32, 72, 150, 24);
-    txtC->setBounds (32, 104, 150, 24);
+    sliderSustain->setBounds (8, 40, 240, 24);
+    sliderLevel->setBounds (8, 100, 240, 24);
+    lblR->setBounds (8, 10, 240, 24);
+    lblC->setBounds (8, 70, 240, 24);
+//    txtR->setBounds (32, 72, 150, 24);
+//    txtC->setBounds (32, 104, 150, 24);
     //[UserResized] Add your own custom resize handling here..
     //[/UserResized]
 }
@@ -144,32 +142,29 @@ void JuceTemplateAudioProcessorEditor::sliderValueChanged (Slider* sliderThatWas
     char str[50];
     //[/UsersliderValueChanged_Pre]
 
-    if (sliderThatWasMoved == sliderFc)
+    if (sliderThatWasMoved == sliderSustain)
     {
-        //[UserSliderCode_sliderFc] -- add your slider handling code here..
-        double fc = sliderFc->getValue();
-        float normalized = (fc - 50) / (5000 - 50);
-        processor.setParameter(normalized * (20e3 - 100) + 100, 0);
+        //[UserSliderCode_sliderSustain] -- add your slider handling code here..
+        processor.setParameter(sliderSustain->getValue() * (100e3) + 10e3, 0);
 //        processor.R = sqrt(RC/(2*M_PI*fc));
 //        processor.C = sqrt(1./(2*M_PI*fc*RC));
 //        sprintf(str,"%.1e",processor.R);
 //        txtR->setText(str);
 //        sprintf(str,"%.1e",processor.C);
         //txtC->setText(str);
-        //[/UserSliderCode_sliderFc]
+        //[/UserSliderCode_sliderSustain]
     }
-    else if (sliderThatWasMoved == sliderRC)
+    else if (sliderThatWasMoved == sliderLevel)
     {
-        //[UserSliderCode_sliderRC] -- add your slider handling code here..
-        double fc = sliderFc->getValue();
-        double RC = pow(10.0,(sliderRC->getValue()));
+        //[UserSliderCode_sliderLevel] -- add your slider handling code here..
+        processor.setParameter(sliderLevel->getValue(), 1);
 //        processor.R = sqrt(RC/(2*M_PI*fc));
 //        processor.C = sqrt(1./(2*M_PI*fc*RC));
 //        sprintf(str,"%.1e",processor.R);
 //        txtR->setText(str);
 //        sprintf(str,"%.1e",processor.C);
         //txtC->setText(str);
-        //[/UserSliderCode_sliderRC]
+        //[/UserSliderCode_sliderLevel]
     }
 
     //[UsersliderValueChanged_Post]
@@ -197,13 +192,13 @@ BEGIN_JUCER_METADATA
                  snapPixels="8" snapActive="1" snapShown="1" overlayOpacity="0.330"
                  fixedSize="1" initialWidth="250" initialHeight="140">
   <BACKGROUND backgroundColour="ff323e44"/>
-  <SLIDER name="Fc" id="7e094da79667b628" memberName="sliderFc" virtualName=""
-          explicitFocusOrder="0" pos="8 8 240 24" min="50" max="5000" int="0"
+  <SLIDER name="Sustain" id="7e094da79667b628" memberName="sliderSustain" virtualName=""
+          explicitFocusOrder="0" pos="8 8 240 24" min="0" max="1" int="0"
           style="LinearHorizontal" textBoxPos="TextBoxLeft" textBoxEditable="1"
           textBoxWidth="80" textBoxHeight="20" skewFactor="1" needsCallback="1"/>
-  <SLIDER name="Distortion" id="4790b9f95affbe6d" memberName="sliderRC"
+  <SLIDER name="Level" id="4790b9f95affbe6d" memberName="sliderLevel"
           virtualName="" explicitFocusOrder="0" pos="8 40 240 24" min="0"
-          max="6" int="0" style="LinearHorizontal" textBoxPos="TextBoxLeft"
+          max="1" int="0" style="LinearHorizontal" textBoxPos="TextBoxLeft"
           textBoxEditable="1" textBoxWidth="80" textBoxHeight="20" skewFactor="1"
           needsCallback="1"/>
   <LABEL name="R" id="309015366ea4b01e" memberName="lblR" virtualName=""

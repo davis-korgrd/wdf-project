@@ -109,12 +109,6 @@ namespace wdfSubmodule
         float m_fResComponentVal;
         float m_fCapComponentVal;
         float m_fLdrComponentVal;
-        enum
-        {
-            kParallelAdapterTreeLevel1,
-            kParallelAdapterTreeLevel2,
-            kParallelAdapterNumAdapters
-        };
         
         //-----------------------------------------------------------------------------------
         //---------------------------------- CLASSES ----------------------------------------
@@ -126,14 +120,11 @@ namespace wdfSubmodule
         // WDF model of a capacitor
         std::unique_ptr<wdfTerminatedCap> m_pCap;
         
-        // WDF model of a resistor
-        std::unique_ptr<wdfTerminatedRes> m_pRes;
-        
         // Light-sensitive resistor
         std::unique_ptr<wdfUnterminatedRes> m_pLdr;
         
         // WDF series adapter. Necessary for connecting components
-        std::unique_ptr<wdfTerminatedParallel> m_pParallelAdapters[kParallelAdapterNumAdapters];
+        std::unique_ptr<wdfTerminatedParallel> m_pParallelAdapter;
     };
     
     ///////////////////////////////////////////////////
@@ -147,6 +138,7 @@ namespace wdfSubmodule
         
         void        processSample(float sampleIn, float & sampleOut);
         void        reset();
+        void        setSampleRate(float sampleRate);
 
         void        setR1ComponentVal(float r1Val, bool isNormalized = 0);
         void        setR2ComponentVal(float r2Val, bool isNormalized = 0);
@@ -179,7 +171,7 @@ namespace wdfSubmodule
         //-----------------------------------------------------------------------------------
         //---------------------------------- CLASSES ----------------------------------------
         //-----------------------------------------------------------------------------------
-        wdfOnePoleHighPass * m_Hpf;
+        wdfOnePoleHighPass * m_pHpf;
         
         // Model filter input as a resistive voltage source
         std::unique_ptr<wdfTerminatedResVSource> m_pInputSource;

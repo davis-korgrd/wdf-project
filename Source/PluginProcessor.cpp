@@ -43,6 +43,8 @@ JuceTemplateAudioProcessor::JuceTemplateAudioProcessor()
 JuceTemplateAudioProcessor::~JuceTemplateAudioProcessor()
 {
     delete m_pHpf;
+    delete m_pGainProcessor;
+    delete m_pEnvFollower;
 }
 
 //==============================================================================
@@ -177,10 +179,10 @@ void JuceTemplateAudioProcessor::processBlock (AudioSampleBuffer& buffer, MidiBu
         {
             float out = 0;
             m_pHpf->processSample(channelData[i], out);
-//            m_pGainProcessor->processSample(out, out);
-//            m_pEnvFollower->processSample(out, m_fFeedback);
-            channelDataR[i] = out;
-            channelData[i] = out;
+            m_pGainProcessor->processSample(out, out);
+            m_pEnvFollower->processSample(out, m_fFeedback);
+            channelDataR[i] = out * m_fLevel;
+            channelData[i] = out * m_fLevel;
         }
     }
 }
@@ -223,10 +225,14 @@ void JuceTemplateAudioProcessor::setParameter(float parameterValue, int paramete
     {
         case 0:
         {
-//            m_pHpf->setResComponentVal(parameterValue);
+            m_pEnvFollower->setR1ComponentVal(parameterValue);
             break;
         }
-            
+        case 1:
+        {
+            m_fLevel = parameterValue;
+            break;
+        }
         default:
             break;
     }
